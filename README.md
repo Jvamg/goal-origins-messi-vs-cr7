@@ -1,136 +1,172 @@
-# Origem dos Gols: Rastreamento Tático de Recepção da Bola (Messi vs Cristiano Ronaldo)
+# Goal Origins: Tactical Tracking of Ball Receipt Locations (Lionel Messi vs. Cristiano Ronaldo)
 
-Este projeto realiza uma análise espacial e tática inédita sobre a **origem dos gols** de **Lionel Messi** e **Cristiano Ronaldo**. Em vez de focar apenas no local de onde o chute foi desferido (*shot maps* convencionais), este estudo rastreia exatamente **onde o jogador recebeu a bola** no lance que culminou no gol.
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
+[![mplsoccer](https://img.shields.io/badge/mplsoccer-1.8.1-orange.svg)](https://mplsoccer.readthedocs.io/)
+[![Data: StatsBomb](https://img.shields.io/badge/Data-StatsBomb_Open_Data-red.svg)](https://github.com/statsbomb/open-data)
+[![Data: Opta/WhoScored](https://img.shields.io/badge/Data-Opta_via_WhoScored-green.svg)](https://www.whoscored.com/)
 
----
+A spatial and tactical analytics study exploring **where football's greatest goalscorers actually receive the ball before scoring**.
 
-## 🎯 Regra da Posse Individual (Reset de Posse)
-
-A metodologia foi desenhada para isolar a ação direta do artilheiro:
-
-1. O rastreamento parte do chute a gol e retrocede cronologicamente na cadeia de eventos daquela posse de bola.
-2. **Reset de Posse:** Se o jogador passar a bola para um companheiro e recebê-la de volta mais à frente, a posse anterior é descartada e resetada. O ponto mapeado é exclusivamente o da **recepção final da bola que antecedeu o gol**.
-3. Se o lance decorre de um passe de um companheiro (assistência), o ponto registrado é a coordenada exata de recepção (`endX, endY` do passe).
-4. Se o jogador conduziu ou driblou antes de finalizar, o ponto registrado é o seu primeiro toque dessa ação individual contínua.
-5. Em cobranças de falta direta, pênaltis ou rebotes de primeira, a coordenada de recepção coincide com o local do chute.
+Conventional football analytics relies heavily on standard *shot maps*, which only capture the terminal coordinates $(x, y)$ of the shot itself. This project investigates the preceding phase: tracking the **first touch of the final individual possession** that led to each goal across the multi-decade careers of **Lionel Messi** and **Cristiano Ronaldo**.
 
 ---
 
-## 📊 Cobertura dos Dados (Multi-Liga & Multi-Época)
+## 🎯 Methodology: The Individual Possession Reset Rule
 
-Para maximizar a amostra histórica de ambos sem depender de planos pagos comerciais, combinamos dados abertos da **StatsBomb** e eventos granulares da **Opta (via WhoScored)**:
+To isolate the player's direct action leading up to the goal, the tracking pipeline enforces an **individual possession reset rule**:
 
-* **Lionel Messi (505 Gols Mapeados):**
-  * Toda a trajetória pelo FC Barcelona em La Liga (2004/05 a 2020/21) na base aberta da StatsBomb.
-  * Copas do Mundo FIFA (2014, 2018 e 2022).
-  * Distância média da recepção: **15.9 metros** do gol.
-
-* **Cristiano Ronaldo (289 Gols Mapeados):**
-  * **StatsBomb Open Data (56 gols):** Copa do Mundo FIFA 2018, UEFA Euro 2020 e Champions League.
-  * **WhoScored / Opta Feeds (233 gols):**
-    * **Real Madrid (La Liga):** Temporadas 2014/15 (48 gols), 2015/16 (35 gols), 2016/17 (25 gols) e 2017/18 (26 gols).
-    * **Juventus (Serie A):** Temporadas 2018/19 (21 gols), 2019/20 (31 gols) e 2020/21 (29 gols).
-    * **Manchester United (Premier League):** Temporada 2021/22 (18 gols).
-  * Distância média da recepção: **14.0 metros** do gol.
+1. **Backwards Event Traversal:** For every registered goal, the algorithm starts at the shot event and traverses backwards through the sequential event chain within the same team possession and match half.
+2. **Individual Possession Reset:** If the player receives the ball, passes it to a teammate, and subsequently receives a return pass before shooting, the earlier sequence resets. The tracked coordinate is strictly the **final ball receipt** immediately preceding the finish.
+3. **Assisted Chances:** If the goal is preceded by an assist pass from a teammate, the receipt location is mapped directly to the pass terminus (`pass_end_location` / `endX, endY`).
+4. **Individual Runs & Take-Ons:** If the player dribbles, takes on defenders, or controls the ball over distance before shooting, the tracked coordinate is the initial touch of that continuous run.
+5. **Direct Actions:** For direct free kicks, penalties, or immediate first-time rebound strikes, the receipt coordinate matches the shot location.
 
 ---
 
-## 🖼️ Visualizações Táticas
+## 📊 Dataset & Career Scope
 
-### 1. Comparação Lado a Lado (Dispersão Limpa)
-Dispersão dos pontos individuais de recepção na metade ofensiva do campo (Pitch StatsBomb / mplsoccer em tema escuro):
+To achieve comprehensive career coverage without commercial data subscriptions, this project fuses **StatsBomb Open Data** with granular **Opta event streams (via WhoScored)**:
 
-![Comparação Messi vs Cristiano Ronaldo](assets/comparacao_messi_cristiano.png)
-
----
-
-### 2. Comparação Proporcional Normalizada (% dos Gols)
-Para eliminar a disparidade entre o tamanho das amostras (505 gols vs 289 gols), cada célula hexagonal calcula a **porcentagem do total de gols daquele próprio jogador** (`% do Total`), compartilhando a mesma escala de cores unificada (0% a 18%):
-
-![Comparação Normalizada Percentual](assets/comparacao_normalizada_percentual.png)
+| Metric | Lionel Messi | Cristiano Ronaldo |
+| :--- | :--- | :--- |
+| **Total Mapped Goals** | **505 goals** | **289 goals** |
+| **Primary Data Sources** | StatsBomb Open Data (100%) | StatsBomb Open Data (19%) + WhoScored/Opta (81%) |
+| **Competitions Covered** | La Liga (2004/05 – 2020/21), FIFA World Cups (2014, 2018, 2022) | Real Madrid / La Liga (14/15–17/18), Juventus / Serie A (18/19–20/21), Man Utd / Premier League (21/22), World Cup (2018), Euro (2020) |
+| **Average Receipt Distance** | **15.9 meters** from goal | **14.0 meters** from goal |
+| **Primary Receipt Profile** | Zone 14, half-spaces & deep midfield | Penalty box, 6-yard box & central penalty spot |
 
 ---
 
-### 3. Mapa de Contraste Tático Direto (Diferença Líquida: Messi vs CR7)
-Subtração direta entre as distribuições percentuais (`% Messi - % Cristiano Ronaldo`), evidenciando a especialidade de cada um:
-* **Ciano:** Zonas onde Messi recebe proporcionalmente muito mais que Cristiano.
-* **Rosa/Vermelho:** Zonas onde Cristiano recebe proporcionalmente muito mais que Messi.
+## 🖼️ Tactical Visualizations
 
-![Contraste Tático Messi vs CR7](assets/contraste_tatico_messi_vs_cr7.png)
+### 1. Side-by-Side Spatial Scatter (Minimalist Dark Pitch)
+Discrete points showing the exact first-touch receipt coordinate for all mapped goals:
 
----
-
-### 4. Superfície de Densidade Contínua (KDE / Heatmap Suave)
-Função de densidade de probabilidade espacial (*Kernel Density Estimation*), mapeando os epicentros gravitacionais de cada jogador:
-
-![Densidade Contínua KDE](assets/comparacao_kde_suave.png)
+![Messi vs Cristiano Ronaldo Career Goal Origins](assets/comparacao_messi_cristiano.png)
 
 ---
 
-### 5. Evidências de Concentração Individual (Dispersão com Jitter + Hexbin)
+### 2. Relative Frequency Comparison (% Normalized Hexbin)
+To remove sample size bias between Messi (505 goals) and Cristiano (289 goals), each hexagonal bin calculates the **percentage of that player's total goals** (`% of Total Goals`) using a **unified shared scale (0% to 18%)**:
 
-#### Lionel Messi (505 Gols)
-![Evidência dos 505 Gols do Messi](assets/evidencia_505_gols_messi.png)
-
-#### Cristiano Ronaldo (289 Gols)
-![Evidência dos 289 Gols do Cristiano](assets/evidencia_289_gols_cristiano.png)
+![Relative Frequency Hexbin Comparison](assets/comparacao_normalizada_percentual.png)
 
 ---
 
-## 🧠 Principais Conclusões Táticas
+### 3. Tactical Contrast Map (Net Advantage / Dominance)
+Direct cell-by-cell subtraction (`% Messi − % Cristiano Ronaldo`), highlighting relative spatial specialization:
+* **Cyan:** Zones where **Lionel Messi** receives the ball with significantly higher relative frequency.
+* **Pink/Red:** Zones where **Cristiano Ronaldo** receives the ball with significantly higher relative frequency.
+* **Dark/Neutral:** Zones with comparable proportional reception rates.
 
-1. **Lionel Messi (Construtor-Finalizador):**
-   * Ponto focal na **Zona 14** (entrada da área) e nos *half-spaces*.
-   * Grande volume de recepções na intermediária e corredor central para conduzir e acelerar.
-   * Ampla dispersão espacial no último terço.
-
-2. **Cristiano Ronaldo (Operador de Área & Finalizador Letal):**
-   * Epicentro de calor concentrado diretamente **no miolo da grande área e pequena área**.
-   * Forte volume de finalizações de 1º toque oriundas de cruzamentos e passes em profundidade.
-   * Movimentação vertical focada em antecipação e posicionamento dentro do bloco adversário.
+![Tactical Contrast Map](assets/contraste_tatico_messi_vs_cr7.png)
 
 ---
 
-## 🚀 Como Executar o Projeto
+### 4. Continuous Kernel Density Estimation (Smooth KDE Heatmap)
+Continuous 2D probability density function (*PDF*) capturing the gravitational spatial centers of each player, independent of raw sample size:
 
-### 1. Clonar o repositório e instalar dependências
+![Continuous KDE Density Comparison](assets/comparacao_kde_suave.png)
+
+---
+
+### 5. Individual Evidence & Concentration Plots (Jitter vs. Hexbin)
+
+#### Lionel Messi (505 Goals Mapped)
+![Messi 505 Goals Evidence](assets/evidencia_505_gols_messi.png)
+
+#### Cristiano Ronaldo (289 Goals Mapped)
+![Cristiano Ronaldo 289 Goals Evidence](assets/evidencia_289_gols_cristiano.png)
+
+---
+
+## 🧠 Key Tactical Insights
+
+### 🇦🇷 Lionel Messi: The Playmaker-Finisher
+* **Zone 14 Gravitational Pull:** Heavy concentration of receipts outside the 18-yard box and across the central half-spaces.
+* **Deep Progression:** Frequently receives in the middle third or half-way line before accelerating into shooting range.
+* **Higher Receipt Distance:** Average distance of **15.9m** confirms his role as both the primary creator and terminal executor.
+
+### 🇵🇹 Cristiano Ronaldo: The Box Dominator
+* **Penalty Box Concentration:** Peak density is concentrated inside the 6-yard box and near the penalty spot.
+* **Elite Off-Ball Movement:** High volume of first-touch finishes resulting from runs into the blind spots of center-backs.
+* **Shorter Receipt Distance:** Average distance of **14.0m** reflects his evolution into a penalty-box operator and header/poacher specialist.
+
+---
+
+## 🚀 Installation & Usage
+
+### 1. Clone the repository
 ```bash
 git clone https://github.com/Jvamg/goal-origins-messi-vs-cr7.git
 cd goal-origins-messi-vs-cr7
+```
 
+### 2. Set up virtual environment
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Gerar as Visualizações
-O script lê os dados pré-processados na pasta `data/` e renderiza os gráficos em segundos:
+### 3. Generate Visualizations
+The script loads the pre-processed datasets stored in `data/` and generates high-resolution figures in `assets/`:
 
 ```bash
-# Gerar todos os gráficos de uma vez (dispersão, densidade, normalizados e contraste):
+# Generate all charts at once (scatter, hexbin density, normalized % and contrast):
 python3 visualizar_origem_gols_carreira.py --todos
 
-# Gerar apenas os mapas de dispersão e densidade hexbin:
+# Generate scatter and raw hexbin density plots:
 python3 visualizar_origem_gols_carreira.py --densidade
 
-# Gerar as análises estatísticas normalizadas (% relativa, contraste tático e KDE):
+# Generate normalized statistical comparisons (% relative, contrast map, KDE):
 python3 visualizar_origem_gols_carreira.py --normalizado
 
-# Gerar gráfico de um jogador individual:
+# Generate individual player visualizations:
 python3 visualizar_origem_gols_carreira.py --jogador messi
 python3 visualizar_origem_gols_carreira.py --jogador cristiano
 ```
 
-### 3. Coleta de Novas Ligas / Atualização de Dados
-Se desejar reexecutar os coletores e extrair temporadas adicionais:
-* `src/scraper_whoscored.py`: Coleta fixtures e eventos da Opta via WhoScored para ligas europeias.
-* `src/scraper_statsbomb.py`: Extrai e processa partidas públicas da StatsBomb.
+### 4. Scraping Additional Seasons (Optional)
+If you wish to re-run the data collection pipelines or extend to other leagues:
+* `src/scraper_whoscored.py`: Downloads schedule calendars and event feeds from Opta/WhoScored for top European leagues.
+* `src/scraper_statsbomb.py`: Queries and parses match events from the StatsBomb Open Data archive.
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
-* **Python 3.12**
-* **[mplsoccer](https://mplsoccer.readthedocs.io/):** Desenho de gramados táticos e mapas de eventos.
-* **[StatsBombPy](https://github.com/statsbomb/statsbombpy):** Acesso à API de dados abertos da StatsBomb.
-* **[SoccerData](https://soccerdata.readthedocs.io/):** Web scraping de eventos da Opta/WhoScored.
-* **Matplotlib, Pandas, NumPy & SciPy:** Computação espacial, KDE e binning 2D.
+## 📁 Repository Structure
+
+```text
+goal-origins-messi-vs-cr7/
+├── .gitignore                          # Ignores virtualenvs, caches, and raw scrape locks
+├── README.md                           # Documentation, tactical analysis, and embedded visuals
+├── requirements.txt                    # Project dependencies
+├── visualizar_origem_gols_carreira.py  # Unified CLI analysis & plotting application
+├── data/                               # Clean, lightweight processed datasets (~92 KB)
+│   ├── messi_goals.pkl                 # 505 Messi goals with receipt coords
+│   ├── cr7_goals.pkl                   # 56 CR7 goals via StatsBomb
+│   └── cr7_whoscored_goals.pkl         # 233 CR7 goals via WhoScored/Opta
+├── assets/                             # High-resolution generated tactical visualizations
+│   ├── comparacao_messi_cristiano.png
+│   ├── comparacao_normalizada_percentual.png
+│   ├── contraste_tatico_messi_vs_cr7.png
+│   ├── comparacao_kde_suave.png
+│   ├── comparacao_densidade_messi_cristiano.png
+│   ├── evidencia_505_gols_messi.png
+│   ├── evidencia_289_gols_cristiano.png
+│   ├── gols_carreira_messi.png
+│   └── gols_carreira_cristiano.png
+└── src/                                # Reusable scraping and data processing modules
+    ├── __init__.py
+    ├── scraper_statsbomb.py            # StatsBomb event parser
+    └── scraper_whoscored.py            # Opta/WhoScored event parser
+```
+
+---
+
+## 🛠️ Built With
+* **[mplsoccer](https://mplsoccer.readthedocs.io/):** Football pitch drawings and event visualizations.
+* **[StatsBombPy](https://github.com/statsbomb/statsbombpy):** Wrapper for StatsBomb Open Data.
+* **[SoccerData](https://soccerdata.readthedocs.io/):** Web scraping interface for Opta/WhoScored feeds.
+* **[Matplotlib](https://matplotlib.org/):** Core plotting, colormaps, and multi-panel figures.
+* **[Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/) & [SciPy](https://scipy.org/):** Coordinate transformations, 2D binning, and kernel density estimation.
