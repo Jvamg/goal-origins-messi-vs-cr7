@@ -9,6 +9,26 @@ A spatial and tactical analytics study exploring **where football's greatest goa
 
 Conventional football analytics relies heavily on standard *shot maps*, which only capture the terminal coordinates $(x, y)$ of the shot itself. This project investigates the preceding phase: tracking the **first touch of the final individual possession** that led to each goal across the multi-decade careers of **Lionel Messi** and **Cristiano Ronaldo**.
 
+> *"Conventional shot maps show where goals end. This project investigates where the scorer's final individual action begins."*
+
+---
+
+## 💡 Context & Prior Art
+
+Inspired by earlier visualizations—such as **Marius Fischer's 2021 map** of the first touch preceding Lionel Messi's 648 Barcelona goals—this project approaches the same underlying tactical question programmatically, formalizing an **individual-possession reset rule** and extending the analysis to both **Lionel Messi** and **Cristiano Ronaldo** using granular event-level data.
+
+### From Visual Concept to Reproducible Data Engineering
+While visual precedents established the compelling nature of this question (frequently constructed via manual or semi-manual tagging), this repository introduces an automated, reproducible pipeline:
+
+```text
+Goal Event ──(Backwards Traversal)──> Scorer Events ──(Possession Reset / Return Pass)──> Receipt Coordinate (x, y)
+```
+
+1. **Automated Algorithmic Traversal:** Programmatic state machine navigating chronological event streams from match feeds, eliminating manual tagging or subjective bias.
+2. **Comparative Paradigm (Messi vs. CR7):** Extending the methodology to directly contrast two all-time finishing archetypes across 794 career goals.
+3. **Sample-Invariant Normalization:** Mitigating match volume and data availability disparities through relative frequency (% of goals) hexbins, net tactical contrast differential maps, and continuous 2D Kernel Density Estimation (KDE).
+4. **Open Science & Reproducibility:** Fully accessible Python codebase, reusable scrapers, and structured data artifacts for community research.
+
 ---
 
 ## 🎯 Methodology: The Individual Possession Reset Rule
@@ -170,3 +190,11 @@ goal-origins-messi-vs-cr7/
 * **[SoccerData](https://soccerdata.readthedocs.io/):** Web scraping interface for Opta/WhoScored feeds.
 * **[Matplotlib](https://matplotlib.org/):** Core plotting, colormaps, and multi-panel figures.
 * **[Pandas](https://pandas.pydata.org/), [NumPy](https://numpy.org/) & [SciPy](https://scipy.org/):** Coordinate transformations, 2D binning, and kernel density estimation.
+
+---
+
+## 📚 References & Prior Precedent
+* **Marius Fischer (2021):** Conceptual inspiration and early visual mapping of the first touch preceding Lionel Messi's 648 Barcelona goals.
+* **[StatsBomb Open Data](https://github.com/statsbomb/open-data):** Open football event dataset covering Lionel Messi's complete La Liga career (2004/05–2020/21) and FIFA World Cups.
+* **[WhoScored](https://www.whoscored.com/) / Opta:** Granular match event feeds accessed via `soccerdata` for European domestic competitions.
+* **[mplsoccer Documentation](https://mplsoccer.readthedocs.io/):** Reference library for pitch topologies and coordinate transformations.
