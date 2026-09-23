@@ -1,0 +1,8 @@
+statsbombpy>=1.22.0
+mplsoccer>=1.8.1
+matplotlib>=3.10.0
+pandas>=2.2.0
+numpy>=2.0.0
+scipy>=1.14.0
+soccerdata>=1.8.0
+seleniumbase>=4.34.0
